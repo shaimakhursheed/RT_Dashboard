@@ -7,8 +7,8 @@ import cors from 'cors';
 dotenv.config();
 
 const app = express();
-const expressPort = process.env.PORT || 8081; // Express server port
-const wsPort = 8082; // WebSocket server port, different from Express
+const expressPort = process.env.PORT || 8081; 
+const wsPort = 8082; 
 
 app.use(cors());
 
@@ -16,7 +16,7 @@ let dbConnection;
 
 const startServer = async () => {
     try {
-        // MySQL connection (used for both data generation and Express/WebSocket)
+    
         dbConnection = await mysql.createConnection({
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
@@ -26,15 +26,15 @@ const startServer = async () => {
 
         console.log('Connected to MySQL database.');
 
-        // WebSocket server on port 8082
+    
         const wss = new WebSocketServer({ port: wsPort });
         console.log(`WebSocket server is running on ws://localhost:${wsPort}`);
 
-        // Function to generate random sensor data and insert into MySQL
+    
         const generateData = async () => {
-            const temperature = (Math.random() * 35 + 15).toFixed(2); // Temperature between 15°C and 50°C
-            const humidity = (Math.random() * 50 + 30).toFixed(2);    // Humidity between 30% and 80%
-            const pressure = (Math.random() * 20 + 980).toFixed(2);   // Pressure between 980 hPa and 1000 hPa
+            const temperature = (Math.random() * 35 + 15).toFixed(2); 
+            const humidity = (Math.random() * 50 + 30).toFixed(2);    
+            const pressure = (Math.random() * 20 + 980).toFixed(2);  
 
             const query = `INSERT INTO readings (temperature, humidity, pressure) VALUES (?, ?, ?)`;
             try {
@@ -45,10 +45,10 @@ const startServer = async () => {
             }
         };
 
-        // Insert random data every 500ms
+    
         setInterval(generateData, 500);
 
-        // Function to broadcast the most recent sensor data to all connected clients
+    
         const broadcastData = async () => {
             try {
                 const [rows] = await dbConnection.execute(
@@ -56,7 +56,7 @@ const startServer = async () => {
                 );
                 const data = rows[0];
                 wss.clients.forEach((client) => {
-                    if (client.readyState === 1) { // 1 = WebSocket.OPEN
+                    if (client.readyState === 1) { 
                         client.send(JSON.stringify(data));
                     }
                 });
@@ -65,10 +65,10 @@ const startServer = async () => {
             }
         };
 
-        // Broadcast the latest data every 500ms
+    
         setInterval(broadcastData, 500);
 
-        // REST API to fetch recent sensor data
+
         app.get('/api/data', async (req, res) => {
             try {
                 const [rows] = await dbConnection.execute(
@@ -80,18 +80,18 @@ const startServer = async () => {
             }
         });
 
-        // Start Express server on port 8081
+        
         app.listen(expressPort, () => {
             console.log(`Express server running on http://localhost:${expressPort}`);
         });
 
     } catch (error) {
         console.error('Error starting server:', error);
-        process.exit(1); // Exit the process if there's a fatal error
+        process.exit(1); 
     }
 };
 
-// Gracefully handle MySQL connection termination and server shutdown
+
 process.on('SIGINT', async () => {
     try {
         if (dbConnection) {
@@ -104,5 +104,4 @@ process.on('SIGINT', async () => {
     process.exit();
 });
 
-// Start the server
 startServer();
